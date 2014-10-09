@@ -1557,8 +1557,6 @@ bool Fibers::loadDmri(const QString& filename)
     return true;
 }
 
-//#include <arpa/inet.h>
-
 /********************************************//**
 \brief Method to load a TCK file
 \param filename : path of the input file to load

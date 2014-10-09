@@ -1,10 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#if WIN32 || _WIN32
-	#include "stdint.h"
-#endif
-
 #include <sstream>
 
 #include <QFile>
