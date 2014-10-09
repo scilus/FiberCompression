@@ -78,21 +78,21 @@ void Fibers::init(const bool compress,
     m_outputPath = outputPath;
     m_outputStatsFilename = outputStatsFilename;
     m_errorMax = errorMax;
-    
+
     bool outputExtSameAsInput = (getExtension(m_inputPath) == getExtension(m_outputPath));
-    
+
     m_transformationType = transformationType;
     m_quantizationType = quantizationType;
     m_precisionQuantization = precisionQuantization;
     m_encodingType = encodingType;
-    
+
     if(outputExtSameAsInput)
     {
         m_transformationType = NO_TRANSFORMATION;
         m_quantizationType = NO_QUANTIZATION;
         m_encodingType = NO_ENCODING;
     }
-    
+
     if(m_errorMax < 0.2)
     {
         m_precisionQuantization = precisionQuantization;
@@ -126,9 +126,9 @@ void Fibers::reset()
     m_countLines = 0;
 
     m_pOriginal = NULL;
-    
+
     m_pStop = new bool(false);
-    
+
     m_outputStatsFilename = "";
     m_inputPath = "";
     m_outputPath = "";
@@ -138,13 +138,13 @@ void Fibers::reset()
     m_precisionQuantization = DEFAULT_PRECISION_QUANT;
     m_encodingType = DEFAULT_ENCODING_TYPE;
     m_compress = false;
-    
+
     m_fiberType = DEFAULT_FIBER_TYPE;
     m_huffmanDict.cleanUp();
     m_colorHuffmanDict.cleanUp();
     m_arithmeticDict.cleanUp();
     m_colorArithmeticDict.cleanUp();
-    
+
     //m_pointsArray.clear();
     m_rColorArray.clear();
     m_gColorArray.clear();
@@ -204,13 +204,13 @@ bool Fibers::compress()
     {
         return false;
     }
-    
+
     // 2. Keep a copy of the original fiber (suitable only to compute errors in transformation step)
     if(m_transformationType != NO_TRANSFORMATION)
     {
         m_pOriginal = this;
     }
-    
+
     // 3. Get Quantization maximum error
     displayMessage(QString("Linearization..."));
     float linError = m_errorMax;
@@ -219,7 +219,7 @@ bool Fibers::compress()
         float qMax = getQuantizationMaxError(m_quantizationType, m_precisionQuantization);
         linError = m_errorMax - qMax;
     }
-    
+
     // 4. Linearization
     saveResults("Linearization maximum error : " + QString::number(linError) + "\n");
     if(linError > 0.0f)
@@ -229,7 +229,7 @@ bool Fibers::compress()
             return false;
         }
     }
-    
+
     // 5. Approximation
     if(m_transformationType != NO_TRANSFORMATION)
     {
@@ -238,9 +238,9 @@ bool Fibers::compress()
         {
             return false;
         }
-        
+
     }
-    
+
     // 6. Quantization
     if(m_quantizationType != NO_QUANTIZATION)
     {
@@ -258,7 +258,7 @@ bool Fibers::compress()
             return false;
         }
     }
-    
+
     // Encode or save directly in original format
     if(m_encodingType != NO_ENCODING)
     {
@@ -268,7 +268,7 @@ bool Fibers::compress()
         {
             return false;
         }
-        
+
         // 8. Save compressed file
         displayMessage(QString("Saving..."));
         if(!saveCompressed(m_encodingType, m_transformationType, m_outputPath))
@@ -285,14 +285,14 @@ bool Fibers::compress()
             return false;
         }
     }
-    
+
     #if _SAVE_STATS
         float cr = getCompressionRatio();
         displayMessage("Compression Ratio : " + QString::number(cr));
     #endif
-    
+
     emit finished();
-    
+
     return true;
 }
 
@@ -305,15 +305,15 @@ bool Fibers::decompress()
 {
     m_encodingType = NO_ENCODING;
     m_transformationType = NO_TRANSFORMATION;
-    
+
     displayMessage(QString("Loading..."));
-    
+
     // 1. Load fibers
     if(!loadCompressed(m_inputPath, m_encodingType, m_transformationType))
     {
         return false;
     }
-    
+
     // 2. Validate fibertype and output extension
     bool match = false;
     QString fiberTypeExt;
@@ -339,14 +339,14 @@ bool Fibers::decompress()
                             + fiberTypeExt + ")."));
         return false;
     }
-    
+
     // 3. Decode
     displayMessage(QString("Decoding..."));
     if(!decode(m_encodingType))
     {
         return false;
     }
-    
+
     // 4. Inverse transformation on each dimension
     if(m_transformationType != NO_TRANSFORMATION)
     {
@@ -368,14 +368,14 @@ bool Fibers::decompress()
         }
         setPointsArrayDim(transformed, 2);
     }
-    
+
     // 5. Save uncompressed file
     displayMessage(QString("Saving..."));
     if(!save(m_outputPath))
     {
         return false;
     }
-    
+
     emit finished();
     return true;
 }
@@ -394,17 +394,17 @@ void Fibers::displayMessage(const QString& message)
 /********************************************//**
 \brief Linearization of the entire dataset
 \param thresholdValue : maximum error threshold in mm
-\return boolean true if the execution is finished, 
+\return boolean true if the execution is finished,
         false if the process has been stopped during the execution
 ***********************************************/
 bool Fibers::linearize(const double thresholdValue)
 {
     int countPoints = 0;
     assert(thresholdValue >= 0.0);
-    
+
     QVector<float> linearizedFiberX, linearizedFiberY, linearizedFiberZ;
     QVector<unsigned char> colorFiberX, colorFiberY, colorFiberZ;
-    
+
     // Linearize each fiber separately
     for (int f = 0; f < getCountLines(); f++)
     {
@@ -413,12 +413,12 @@ bool Fibers::linearize(const double thresholdValue)
         {
             return false;
         }
-        
+
         setFiberInPointArray(linearizedFiberX, f, 0);
         setFiberInPointArray(linearizedFiberY, f, 1);
         setFiberInPointArray(linearizedFiberZ, f, 2);
         countPoints += linearizedFiberX.size();
-        
+
         if(m_colorArrayLoadedFromFile)
         {
             setColorArray(colorFiberX, f, 0);
@@ -427,7 +427,7 @@ bool Fibers::linearize(const double thresholdValue)
         }
     }
     saveResults("Total number of points after linearization : " + QString::number(countPoints) + "\n");
-    
+
     return true;
 }
 
@@ -457,15 +457,15 @@ bool Fibers::linearizeFiber(const int fibIdx,
     rColorArray.resize(0);
     gColorArray.resize(0);
     bColorArray.resize(0);
-    
+
     int pointIdx = 0;
     int segmentSecondPtIdx = 2;
-    
+
     Q1 = Vector(m_xPointArray[fibIdx][0], m_xPointArray[fibIdx][0], m_zPointArray[fibIdx][0]);
     fiberResultX.push_back(m_xPointArray[fibIdx][0]);
     fiberResultY.push_back(m_yPointArray[fibIdx][0]);
     fiberResultZ.push_back(m_zPointArray[fibIdx][0]);
-    
+
     while(segmentSecondPtIdx < getLineSize(fibIdx))
     {
         if(*m_pStop)
@@ -473,7 +473,7 @@ bool Fibers::linearizeFiber(const int fibIdx,
             return false;
         }
         float distance = 0.0f;
-        
+
         // Ignore as many points as possible according to error threshold
         while((distance < thresholdValue) && segmentSecondPtIdx < getLineSize(fibIdx))
         {
@@ -484,7 +484,7 @@ bool Fibers::linearizeFiber(const int fibIdx,
             Q2 = Vector(m_xPointArray[fibIdx][segmentSecondPtIdx],
                         m_xPointArray[fibIdx][segmentSecondPtIdx],
                         m_zPointArray[fibIdx][segmentSecondPtIdx]);
-            
+
             float d = 0.0f;
             for (int k = pointIdx; k < segmentSecondPtIdx; k++)
             {
@@ -505,7 +505,7 @@ bool Fibers::linearizeFiber(const int fibIdx,
         fiberResultX.push_back(m_xPointArray[fibIdx][segmentSecondPtIdx-1]);
         fiberResultY.push_back(m_yPointArray[fibIdx][segmentSecondPtIdx-1]);
         fiberResultZ.push_back(m_zPointArray[fibIdx][segmentSecondPtIdx-1]);
-        
+
         // Make sure that last point will always be added if necessary
         if(segmentSecondPtIdx == getLineSize(fibIdx) - 1)
         {
@@ -516,7 +516,7 @@ bool Fibers::linearizeFiber(const int fibIdx,
             fiberResultY.push_back(m_yPointArray[fibIdx][segmentSecondPtIdx]);
             fiberResultZ.push_back(m_zPointArray[fibIdx][segmentSecondPtIdx]);
         }
-        
+
         // Sync color array if necessary
         if(m_colorArrayLoadedFromFile)
         {
@@ -550,11 +550,11 @@ bool Fibers::approximate(TransformationType ttype,
     assert(m_xPointArray.size() > 0);
     assert(m_xPointArray.size() == m_yPointArray.size() &&
            m_xPointArray.size() == m_zPointArray.size());
-    
+
     std::vector<int> cpt;
     std::vector<float> histo;
     std::vector<float> std;
-    
+
     // Treat each fiber separately
     for(int k = 0; k < m_xPointArray.size(); k++)
     {
@@ -564,7 +564,7 @@ bool Fibers::approximate(TransformationType ttype,
         }
         int size = m_xPointArray[k].size();
         assert(size > 0);
-        
+
         // Compute forward transformations on each dimension of the current fiber
         QVector<float> transf_x;
         if(!getArrayTransformation(ttype, m_xPointArray[k], 1, size, transf_x))
@@ -582,14 +582,14 @@ bool Fibers::approximate(TransformationType ttype,
             return false;
         }
         assert(transf_x.size() == transf_y.size() && transf_x.size() == transf_z.size());
-        
-        
+
+
         // Find number of coefficients for non-linear approximation according to errorMaxT
         int lower = 1;
         int upper = transf_x.size();
         int m = lower + ((upper - lower) / 2);
         int res_m = m;
-        
+
         bool notFound = true;
         // Find best m
         while(notFound)
@@ -600,12 +600,12 @@ bool Fibers::approximate(TransformationType ttype,
                 return false;
             }
             m = res_m;
-            
+
             // Approximate with m coefficients
             QVector<float> aTransf_x = nonLinearApproximation(transf_x, m);
             QVector<float> aTransf_y = nonLinearApproximation(transf_y, m);
             QVector<float> aTransf_z = nonLinearApproximation(transf_z, m);
-            
+
             // Get backward transformations
             if(!getArrayTransformation(ttype, aTransf_x , -1, size, aTransf_x))
             {
@@ -619,7 +619,7 @@ bool Fibers::approximate(TransformationType ttype,
             {
                 return false;
             }
-            
+
             // Compute error
             float errorMax, errorMean, errorStd;
             QVector<Vector> mergeVec = mergeDimensions(aTransf_x,
@@ -632,7 +632,7 @@ bool Fibers::approximate(TransformationType ttype,
             {
                 return false;
             }
-            
+
             // Update bounds
             if(errorMax > errorMaxT)
             {
@@ -649,7 +649,7 @@ bool Fibers::approximate(TransformationType ttype,
                 res_m = upper;
             }
         }
-    
+
         // Approximate with best m
         if(res_m < transf_x.size())
         {
@@ -657,18 +657,18 @@ bool Fibers::approximate(TransformationType ttype,
             transf_y = nonLinearApproximation(transf_y, res_m);
             transf_z = nonLinearApproximation(transf_z, res_m);
         }
-        
+
         // Save the result
         setFiberInPointArray(transf_x, k, 0);
         setFiberInPointArray(transf_y, k, 1);
         setFiberInPointArray(transf_z, k, 2);
     }
-    
+
     for(int k = 0; k < m_xPointArray.size(); k++)
     {
         int size = m_xPointArray[k].size();
         assert(size > 0);
-        
+
         // Compute forward transformations on each dimension of the current fiber
         QVector<float> transf_x;
         if(!getArrayTransformation(ttype, m_xPointArray[k], 1, size, transf_x))
@@ -685,9 +685,9 @@ bool Fibers::approximate(TransformationType ttype,
         {
             return false;
         }
-        
+
     }
-    
+
     return true;
 }
 
@@ -707,7 +707,7 @@ bool Fibers::getTransformation(const TransformationType type,
                                QList< QVector<float> >& transformed)
 {
     transformed.clear();
-    
+
     // Get transformation on each fiber separately
     for(int f = 0; f < array.size(); f++)
     {
@@ -745,7 +745,7 @@ bool Fibers::getArrayTransformation(const TransformationType type,
                                     QVector<float>& transformedArray)
 {
     transformedArray.clear();
-    
+
     // Transform the 1D array according to the transformation type and the direction
     switch(type)
     {
@@ -780,11 +780,11 @@ QVector<float> Fibers::nonLinearApproximation(const QVector<float>& array,
 {
     assert(nbKeptCoeffs > 0);
     assert(array.size() > 0);
-    
+
     QVector<float> result = array;
     QVector<float> toSort;
     int size = (int)result.size();
-    
+
     // Find threshold corresponding to nbKeptCoeffs
     for(int i = 0; i < size; i++)
     {
@@ -792,7 +792,7 @@ QVector<float> Fibers::nonLinearApproximation(const QVector<float>& array,
     }
     std::sort(toSort.begin(), toSort.end(), sortDescending);
     float threshold = toSort[std::min(nbKeptCoeffs, size) - 1];
-    
+
     // Apply threshold to array
     for(int i = 0; i < size; i++)
     {
@@ -815,7 +815,7 @@ and n most significant digits for non-uniform)
 float Fibers::getQuantizationMaxError(QuantizationType type, int precision)
 {
     float maxError = 0.0f;
-    
+
     if(type == UNIFORM_QUANTIZATION)
     {
         maxError = sqrt(3 * powf(powf(10, precision), 2));
@@ -823,11 +823,11 @@ float Fibers::getQuantizationMaxError(QuantizationType type, int precision)
     else
     {
         float max_num = std::max(fabs(m_globalMin), fabs(m_globalMax));
-        
+
         // Find number of digits at the left of .
         QString num = QString::number(fabs(max_num));
         QStringList list = num.split(QChar('.'));
-        
+
         int i = 0;
         int p = -9999999;
         while(i < list[0].size())
@@ -905,14 +905,14 @@ bool Fibers::uniformQuantization(QList< QVector<float> >& array,
         {
             return false;
         }
-        
+
         for (int j = 0; j < array[i].size(); j++)
         {
             float value = array[i][j];
-            
+
             // Find number of digits at the left of .
             int length = QString::number(int(fabs(value))).size();
-            
+
             // Find corresponding number of significant digits to use non-uniform quantization
             if(p >= 0)
             {
@@ -923,7 +923,7 @@ bool Fibers::uniformQuantization(QList< QVector<float> >& array,
             {
                 num = length + abs(p);
             }
-            
+
             // Use non-uniform quantization
             float result = nonUniformRounding(value, num);
             array[i][j] = result;
@@ -944,7 +944,7 @@ bool Fibers::nonUniformQuantization(QList< QVector<float> >& array,
                                     const int p)
 {
     assert(p > 0);
-    
+
     for (int i = 0; i < array.size(); i++)
     {
         // Check flag to know if we need to stop the process or not
@@ -952,7 +952,7 @@ bool Fibers::nonUniformQuantization(QList< QVector<float> >& array,
         {
             return false;
         }
-        
+
         for (int j = 0; j < array[i].size(); j++)
         {
             float value = nonUniformRounding(array[i][j], p);
@@ -977,12 +977,12 @@ float Fibers::nonUniformRounding(const float value,
     if(value == 0.0f) return value;
     float d = ceil(log10(value < 0 ? -value : value));
     int power = p - (int) d;
-    
+
     // Find the magnitude
     float magnitude = powf(10, power);
     assert(magnitude != std::numeric_limits<float>::infinity() && "Precision is too high !");
     long shifted = floor((value * magnitude) + 0.5);
-    
+
     // Return the rounded value
     return shifted/magnitude;
 }
@@ -1014,12 +1014,12 @@ bool Fibers::getErrors(Fibers* original,
                        float& maxStdError)
 {
     maxError = meanError = meanMaxError = meanStdError = maxStdError = 0.0f;
-    
+
     // Make sure original and final fibers have the same number of fibers
     assert(original->m_xPointArray.size() == xPointsArray.size());
     assert(original->m_yPointArray.size() == yPointsArray.size());
     assert(original->m_zPointArray.size() == zPointsArray.size());
-    
+
     for( int f = 0; f < xPointsArray.size(); f++)
     {
         if(*m_pStop)
@@ -1033,7 +1033,7 @@ bool Fibers::getErrors(Fibers* original,
         QVector<Vector> origFiber = mergeDimensions(original->m_xPointArray[f],
                                                     original->m_yPointArray[f],
                                                     original->m_zPointArray[f]);
-        
+
         // Get errors between original and final fibers
         float currentMaxError, currentMeanError, currentStdError;
         if(!errorsBetweenFibers(origFiber,
@@ -1044,7 +1044,7 @@ bool Fibers::getErrors(Fibers* original,
         {
             return false;
         }
-        
+
         // Update global errors from current error
         maxError = std::max(maxError, currentMaxError);
         meanMaxError += maxError;
@@ -1055,7 +1055,7 @@ bool Fibers::getErrors(Fibers* original,
     meanMaxError /= (float)xPointsArray.size();
     meanError /= (float)xPointsArray.size();
     meanStdError /= (float)xPointsArray.size();
-    
+
     return true;
 }
 
@@ -1078,12 +1078,12 @@ bool Fibers::errorsBetweenFibers(const QVector<Vector>& original,
 {
     QVector<float> dist;
     maxError = meanError = stdError = 0.0f;
-    
+
     // Find the distance between each original points with each segments of the final fiber
     for(int j = 0; j < original.size(); j++)
     {
         float dist_min_pt = std::numeric_limits<float>::max();
-        
+
         // Find the closest final segment of original point
         for( int i = 0; i < final.size() - 1; i++)
         {
@@ -1094,7 +1094,7 @@ bool Fibers::errorsBetweenFibers(const QVector<Vector>& original,
             Vector P = original[j];     // original point
             Vector P0 = final[i];       // first point of final segment
             Vector P1 = final[i+1];     // second point of final segment
-            
+
             // Get the distance between original point (P) and final segment (P0P1)
             float d = getPointToSegmentDistance(P, P0, P1);
             dist_min_pt = std::min(d, dist_min_pt);
@@ -1104,15 +1104,15 @@ bool Fibers::errorsBetweenFibers(const QVector<Vector>& original,
         maxError = std::max(dist_min_pt, maxError);
         meanError += dist_min_pt;
     }
-    
+
     if(*m_pStop)
     {
         return false;
     }
-    
+
     // Update mean and std errors
     meanError /= (float)original.size();
-    
+
     for(int j = 0; j < dist.size(); j++)
     {
         stdError += powf(dist[j] - meanError, 2);
@@ -1139,7 +1139,7 @@ bool Fibers::encode(const QList< QVector<float> >& xArray,
                     const EncodingType encodingType)
 {
     assert((xArray.size() == yArray.size()) && (xArray.size() == zArray.size()));
-    
+
     // Encode according to encodingType
     switch(encodingType)
     {
@@ -1185,7 +1185,7 @@ bool Fibers::decode(const EncodingType decodingType)
     {
         return false;
     }
-    
+
     // Decode according to decodingType
     switch(decodingType)
     {
@@ -1232,7 +1232,7 @@ float Fibers::getCompressionRatio()
 void Fibers::addFiberToPointArray(const QVector<Vector> array)
 {
     assert(array.size() > 0);
-    
+
     // Update m_xPointArray, m_yPointArray and m_zPointArray
     int lineSize = array.size();
     QVector<float> xLine(lineSize), yLine(lineSize), zLine(lineSize);
@@ -1248,9 +1248,9 @@ void Fibers::addFiberToPointArray(const QVector<Vector> array)
     m_xPointArray.push_back(xLine);
     m_yPointArray.push_back(yLine);
     m_zPointArray.push_back(zLine);
-    
+
     assert(m_xPointArray.size() == m_yPointArray.size() && m_xPointArray.size() == m_zPointArray.size());
-    
+
     m_countLines = m_xPointArray.size();
 }
 
@@ -1258,14 +1258,14 @@ void Fibers::addFiberToPointArray(const QVector<Vector> array)
 void Fibers::setFiberInPointArray(const QVector<float> array, const int fibIdx, const int dimIdx)
 {
     assert(array.size() > 0);
-    
+
     // Update m_pointsArray and synchronize m_xPointArray, m_yPointArray and m_zPointArray with it
     int lineSize = array.size();
     for(int i = 0; i < lineSize; i++)
     {
         updateGlobalMinMax(array[i]);
     }
-    
+
     if(dimIdx == 0)
     {
         m_xPointArray[fibIdx] = array;
@@ -1287,7 +1287,7 @@ void Fibers::setFiberInPointArray(const QVector<float> array, const int fibIdx, 
 void Fibers::setColorArray(const QVector<unsigned char> array, const int fibIdx, const int dimIdx)
 {
     assert(array.size() > 0);
-    
+
     // Update m_pointsArray and synchronize m_xPointArray, m_yPointArray and m_zPointArray with it
     int lineSize = array.size();
     for(int i = 0; i < lineSize; i++)
@@ -1311,7 +1311,7 @@ void Fibers::setColorArray(const QVector<unsigned char> array, const int fibIdx,
 
 
 /********************************************//**
-\brief Manipulation method to assign a new value in m_xPointArray, m_yPointArray or m_zPointArray. 
+\brief Manipulation method to assign a new value in m_xPointArray, m_yPointArray or m_zPointArray.
        This method must be used if you need to assign a new value.
 \param value : new value to assign
 \param fibIdx : index of the fiber concerned
@@ -1326,7 +1326,7 @@ void Fibers::setPointArray(const float value,
     assert(fibIdx >= 0 && fibIdx < getCountLines());
     assert(ptIdx >= 0 && ptIdx < getLineSize(fibIdx));
     assert(dimIdx >= 0 && dimIdx < 3);
-    
+
     // Update m_pointsArray and m_xPointArray, m_yPointArray or m_zPointArray at the right position
     if(dimIdx == 0)
     {
@@ -1354,7 +1354,7 @@ void Fibers::setPointsArrayDim(const QList< QVector<float> > array,
 {
     assert(array.size() > 0);
     assert(i >= 0 && i < 3);
-    
+
     // Update m_xPointArray, m_yPointArray or m_zPointArray according to i
     if(i == 0)
     {
@@ -1373,7 +1373,7 @@ void Fibers::setPointsArrayDim(const QList< QVector<float> > array,
     }
     assert(m_xPointArray.size() == m_yPointArray.size() && m_xPointArray.size() == m_zPointArray.size());
 
-    
+
     // Update min / max values
     for(int f = 0; f < array.size(); f++)
     {
@@ -1444,7 +1444,7 @@ bool Fibers::load(const QString& filename)
 {
     bool res = false;
     QString ext = getExtension(filename);
-    
+
     // Load fibers
     if(ext == QString("tck"))
     {
@@ -1474,24 +1474,24 @@ bool Fibers::load(const QString& filename)
 bool Fibers::loadDmri(const QString& filename)
 {
     m_origLineLength.clear();
-    
+
     FILE* pFile;
-    
+
     // Open input file
     pFile = fopen(filename.toUtf8().constData(), "r");
-    
+
     if(pFile == NULL)
     {
         return false;
     }
-    
+
     char *pS1 = new char[10];
     char *pS2 = new char[10];
     char *pS3 = new char[10];
     char *pS4 = new char[10];
     float f1, f2, f3, f4, f5;
     int res, countLines;
-    
+
     // Read header
     res = fscanf(pFile, "%f %s", &f1, pS1);
     res = fscanf(pFile, "%f %s %s %s %s", &f1, pS1, pS2, pS3, pS4);
@@ -1500,27 +1500,27 @@ bool Fibers::loadDmri(const QString& filename)
     res = fscanf(pFile, "%f %f %f %f %f", &f1, &f2, &f3, &f4, &f5);
     res = fscanf(pFile, "%f %f %f %f %f", &f1, &f2, &f3, &f4, &f5);
     res = fscanf(pFile, "%d %f", &countLines, &f2);
-    
+
     delete[] pS1;
     delete[] pS2;
     delete[] pS3;
     delete[] pS4;
-    
+
     pS1 = NULL;
     pS2 = NULL;
     pS3 = NULL;
     pS4 = NULL;
-    
+
     // Read points
     int countPoints = 0;
     float back, front;
-    
+
     for( int i = 0; i < countLines; i++ )
     {
         QVector<Vector> fiberArray;
         res = fscanf( pFile, "%f %f %f", &back, &front, &f1 );
         int nbpoints = back + front;
-        
+
         if( back != 0 && front != 0 )
         {
             nbpoints--;
@@ -1552,12 +1552,10 @@ bool Fibers::loadDmri(const QString& filename)
         addFiberToPointArray(fiberArray);
     }
     saveResults("Original total number of points : " + QString::number(countPoints) + "\n");
-    
+
     fclose( pFile );
     return true;
 }
-
-#include <arpa/inet.h>
 
 /********************************************//**
 \brief Method to load a TCK file
@@ -1568,13 +1566,13 @@ bool Fibers::loadTCK(const QString& filename)
 {
     long int pc = 0;
     size_t data_offset(0);
-    
+
     converterByteFloat cbf;
     m_origLineLength.clear();
-    
+
     //Open file
-    FILE *pFs = fopen(filename.toStdString().c_str(), "r");
-    
+    FILE *pFs = fopen(filename.toUtf8().constData(), "r");
+
     // Read header
     char lineBuffer[200];
     std::string readLine("");
@@ -1586,10 +1584,10 @@ bool Fibers::loadTCK(const QString& filename)
         {
             return false;
         }
-        
+
         fgets(lineBuffer, 200, pFs);
         readLine = std::string(lineBuffer);
-        
+
         // Get data offset.
         if(readLine.find("file") != std::string::npos)
         {
@@ -1599,29 +1597,29 @@ bool Fibers::loadTCK(const QString& filename)
     }
     fclose(pFs);
 
-    
+
     // Get size of the file.
-    FILE *pDataFile = fopen(filename.toStdString().c_str(), "rb");
+    FILE *pDataFile = fopen(filename.toUtf8().constData(), "rb");
     fseek(pDataFile, 0, SEEK_END);
     size_t nSize = ftell(pDataFile);
-    
+
     fseek(pDataFile, data_offset, SEEK_SET);
-    
+
     int countPoints = 0; // number of points
     size_t remainingSize(nSize - data_offset);
-    
-    
+
+
     float x, y, z;
     unsigned char *pBuffer = new unsigned char[12];
     //QList< QVector<Vector> > pointsArray;
     QVector<Vector> fiberArray;
-    
+
     while(remainingSize > 0)
     {
         fiberArray.resize(0);
-        
+
         fread((void*) pBuffer, 1, 12, pDataFile);
-        
+
         // read first point of the track
         pc = 0;
         cbf.b[0] = pBuffer[pc++];
@@ -1639,9 +1637,9 @@ bool Fibers::loadTCK(const QString& filename)
         cbf.b[2] = pBuffer[pc++];
         cbf.b[3] = pBuffer[pc++];
         z = cbf.f;
-        
+
         remainingSize -= 12;
-        
+
         // If points is Inf, it is the end of the file
         if(x == std::numeric_limits<float>::infinity() &&
            y == std::numeric_limits<float>::infinity() &&
@@ -1649,10 +1647,10 @@ bool Fibers::loadTCK(const QString& filename)
         {
             break;
         }
-        
+
         Vector point(x, y, z);
         fiberArray.push_back(point);
-        
+
         //Read points (x,y,z) until x2 equals NaN (0x0000C07F), meaning end of the tract.
         while(remainingSize > 0 && !(cbf.b[0] == 0x00 && cbf.b[1] == 0x00 && cbf.b[2] == 0xC0 && cbf.b[3] == 0x7F))
         {
@@ -1660,14 +1658,14 @@ bool Fibers::loadTCK(const QString& filename)
             {
                 return false;
             }
-            
+
             fread((void*) pBuffer, 1, 12, pDataFile);
-            
+
             if(*m_pStop)
             {
                 return false;
             }
-            
+
             // read next point
             pc = 0;
             cbf.b[0] = pBuffer[pc++];
@@ -1685,9 +1683,9 @@ bool Fibers::loadTCK(const QString& filename)
             cbf.b[2] = pBuffer[pc++];
             cbf.b[3] = pBuffer[pc++];
             z = cbf.f;
-            
+
             remainingSize -= 12;
-            
+
             // Add point if not NaN
             if(!(cbf.b[0] == 0x00 && cbf.b[1] == 0x00 && cbf.b[2] == 0xC0 && cbf.b[3] == 0x7F))
             {
@@ -1703,9 +1701,9 @@ bool Fibers::loadTCK(const QString& filename)
     fclose(pDataFile);
     delete[] pBuffer;
     pBuffer = NULL;
-    
+
     saveResults("Original total number of points : " + QString::number(countPoints) + "\n");
-    
+
     return true;
 }
 
@@ -1718,10 +1716,10 @@ bool Fibers::loadTCK(const QString& filename)
 bool Fibers::loadTRK(const QString& filename)
 {
     converterByteFloat cbf;
-    
+
     // READ HEADER
     m_pTrkHdr = new TRK_hdr();
-    FILE* fp = fopen(filename.toStdString().c_str(), "rb");
+    FILE* fp = fopen(filename.toUtf8().constData(), "rb");
     if(fp != NULL)
     {
         int n = fread(m_pTrkHdr, sizeof(*m_pTrkHdr), 1, fp);
@@ -1731,16 +1729,16 @@ bool Fibers::loadTRK(const QString& filename)
             return false;
         }
     }
-    
+
     int countPoints = 0;
     QVector<Vector> fiberArray;
     m_rColorArray.clear();
     m_gColorArray.clear();
     m_bColorArray.clear();
-    
+
     QVector<unsigned char> rArray, gArray, bArray;
     QVector< QVector<float> > pArray;
-    
+
     for( int i = 0; i < m_pTrkHdr->nbCount; ++i )
     {
         fiberArray.clear();
@@ -1748,7 +1746,7 @@ bool Fibers::loadTRK(const QString& filename)
         gArray.clear();
         bArray.clear();
         pArray.clear();
-        
+
         //Number of points in this track. [4 bytes]
         int nbPoints;
         int n = fread(&nbPoints, sizeof(int), 1, fp);
@@ -1757,12 +1755,12 @@ bool Fibers::loadTRK(const QString& filename)
             fclose(fp);
             return false;
         }
-        
+
         //Read data of one track.
         size_t ptsSize = 3 + m_pTrkHdr->nbScalars;
         size_t tractSize = 4 * (nbPoints * ptsSize + m_pTrkHdr->nbProperties);
         char* pBuffer = new char[tractSize];
-        
+
         // Read tract
         n = fread(pBuffer, 1, tractSize, fp);
         if(n != tractSize)
@@ -1770,18 +1768,18 @@ bool Fibers::loadTRK(const QString& filename)
             fclose(fp);
             return false;
         }
-        
+
         for( unsigned int j = 0; j != nbPoints; ++j )
         {
             QVector<float> color;
             QVector<float> point;
             QVector<float> prop;
-            
+
             //Read coordinates (x,y,z) and scalars associated to each point.
             for( unsigned int k = 0; k < ptsSize; ++k )
             {
                 memcpy(cbf.b, &pBuffer[4 * ( j * ptsSize + k )], 4);
-                
+
                 if( k > 6) // Properties at each point
                 {
                     prop.push_back(cbf.f);
@@ -1817,13 +1815,13 @@ bool Fibers::loadTRK(const QString& filename)
         m_gColorArray.push_back(gArray);
         m_gColorArray.push_back(bArray);
         m_propertiesArray.push_back(pArray);
-        
+
         delete[] pBuffer;
         pBuffer = NULL;
     }
-    
+
     fclose(fp);
-    
+
     saveResults("Original total number of points : " + QString::number(countPoints) + "\n");
 
     return true;
@@ -1844,23 +1842,23 @@ bool Fibers::loadCompressed(const QString& filename,
     clearArrays();
     // Open file
     std::ifstream myfile(filename.toStdString().c_str(), std::ios::in | std::ios::binary);
-    
+
     if(!myfile.is_open())
     {
         std::cout << "Can't open input file !" << std::endl;
         return false;
     }
-    
+
     // Read fibertype, number of points and number of lines
     int fiberType, totalLines;
     myfile.read((char*)&(fiberType), sizeof(fiberType));
     myfile.read((char*)&totalLines, sizeof(totalLines));
     m_fiberType = (FiberType)fiberType;
     m_countLines = totalLines;
-    
+
     myfile.read((char*)&(decodingType), sizeof(decodingType));
     myfile.read((char*)&(ttype), sizeof(ttype));
-    
+
     // Read encoded signal or points
     switch(decodingType)
     {
@@ -1873,7 +1871,7 @@ bool Fibers::loadCompressed(const QString& filename,
                 myfile.read((char*)&line, sizeof(line));
                 m_origLineLength.push_back(line);
             }
-            
+
             if(!readHuffmanEncodedSignal<float>(myfile, m_xEncoded, m_yEncoded, m_zEncoded, m_huffmanDict, m_pStop))
             {
                 return false;
@@ -1889,7 +1887,7 @@ bool Fibers::loadCompressed(const QString& filename,
                 myfile.read((char*)&line, sizeof(line));
                 m_origLineLength.push_back(line);
             }
-            
+
             if(!readArithmeticEncodedSignal<float>(myfile, m_xEncoded, m_arithmeticDict, m_pStop))
             {
                 return false;
@@ -1902,25 +1900,25 @@ bool Fibers::loadCompressed(const QString& filename,
             myfile.close();
             converterByteFloat cbf;
             size_t data_offset(0);
-            
-            FILE *pDataFile = fopen(filename.toStdString().c_str(), "rb");
+
+            FILE *pDataFile = fopen(filename.toUtf8().constData(), "rb");
             fseek(pDataFile, 0, SEEK_END);
             size_t nSize = ftell(pDataFile);
             fseek(pDataFile, data_offset, SEEK_SET);
-            
+
             unsigned char *pBuffer = new unsigned char[nSize - data_offset];
             fread((void*) pBuffer, sizeof(unsigned char), nSize - data_offset, pDataFile);
             fclose(pDataFile);
             pDataFile = NULL;
-            
+
             long int pc = 0;
             int countPoints = 0; // number of points
             size_t remainingSize(nSize - data_offset);
-            
+
             while(remainingSize > 0)
             {
                 QVector<Vector> fiberArray;
-                
+
                 // read one tract
                 cbf.b[0] = pBuffer[pc++];
                 cbf.b[1] = pBuffer[pc++];
@@ -1937,14 +1935,14 @@ bool Fibers::loadCompressed(const QString& filename,
                 cbf.b[2] = pBuffer[pc++];
                 cbf.b[3] = pBuffer[pc++];
                 float z = cbf.f;
-                
+
                 Vector point(x, y, z);
                 fiberArray.push_back(point);
-                
+
                 float x2 = x;
                 cbf.f = x2;
                 remainingSize -= 12;
-                
+
                 //Read points (x,y,z) until x2 equals NaN (0x0000C07F), meaning end of the tract.
                 while(remainingSize > 0 && !(cbf.b[0] == 0x00 && cbf.b[1] == 0x00 && cbf.b[2] == 0xC0 && cbf.b[3] == 0x7F))
                 {
@@ -1954,30 +1952,30 @@ bool Fibers::loadCompressed(const QString& filename,
                     cbf.b[3] = pBuffer[pc++];
                     float x2 = cbf.f;
                     remainingSize -= 4;
-                    
+
                     cbf.b[0] = pBuffer[pc++];
                     cbf.b[1] = pBuffer[pc++];
                     cbf.b[2] = pBuffer[pc++];
                     cbf.b[3] = pBuffer[pc++];
                     float y2 = cbf.f;
                     remainingSize -= 4;
-                    
+
                     cbf.b[0] = pBuffer[pc++];
                     cbf.b[1] = pBuffer[pc++];
                     cbf.b[2] = pBuffer[pc++];
                     cbf.b[3] = pBuffer[pc++];
                     float z2 = cbf.f;
                     remainingSize -= 4;
-                    
+
                     x = x2;
                     y = y2;
                     z = z2;
-                    
+
                     Vector point(x, y, z);
                     fiberArray.push_back(point);
                     cbf.f = x2;
                 }
-                
+
                 // Remove last point, which is the NaN
                 fiberArray.pop_back();
                 addFiberToPointArray(fiberArray);
@@ -1989,7 +1987,7 @@ bool Fibers::loadCompressed(const QString& filename,
             break;
         }
     }
-    
+
     // Read colors
     bool readColors = false;
     myfile.read((char*)&readColors, sizeof(readColors));
@@ -2011,7 +2009,7 @@ bool Fibers::loadCompressed(const QString& filename,
                 {
                     return false;
                 }
-                
+
                 break;
             }
             case ARITHMETIC_ENCODING :
@@ -2026,7 +2024,7 @@ bool Fibers::loadCompressed(const QString& filename,
                 {
                     return false;
                 }
-                
+
                 break;
             }
             case NO_ENCODING :
@@ -2035,25 +2033,25 @@ bool Fibers::loadCompressed(const QString& filename,
                 myfile.close();
                 converterByteFloat cbf;
                 size_t data_offset(0);
-                
-                FILE *pDataFile = fopen(filename.toStdString().c_str(), "rb");
+
+                FILE *pDataFile = fopen(filename.toUtf8().constData(), "rb");
                 fseek(pDataFile, 0, SEEK_END);
                 size_t nSize = ftell(pDataFile);
                 fseek(pDataFile, data_offset, SEEK_SET);
-                
+
                 unsigned char *pBuffer = new unsigned char[nSize - data_offset];
                 fread((void*) pBuffer, sizeof(unsigned char), nSize - data_offset, pDataFile);
                 fclose(pDataFile);
                 pDataFile = NULL;
-                
+
                 long int pc = 0;
                 int countPoints = 0; // number of points
                 size_t remainingSize(nSize - data_offset);
-                
+
                 while(remainingSize > 0)
                 {
                     QVector<Vector> colorArray;
-                    
+
                     // read one tract
                     cbf.b[0] = pBuffer[pc++];
                     cbf.b[1] = pBuffer[pc++];
@@ -2070,14 +2068,14 @@ bool Fibers::loadCompressed(const QString& filename,
                     cbf.b[2] = pBuffer[pc++];
                     cbf.b[3] = pBuffer[pc++];
                     float z = cbf.f;
-                    
+
                     Vector point(x, y, z);
                     colorArray.push_back(point);
-                    
+
                     float x2 = x;
                     cbf.f = x2;
                     remainingSize -= 12;
-                    
+
                     //Read points (x,y,z) until x2 equals NaN (0x0000C07F), meaning end of the tract.
                     while(remainingSize > 0 && !(cbf.b[0] == 0x00 && cbf.b[1] == 0x00 && cbf.b[2] == 0xC0 && cbf.b[3] == 0x7F))
                     {
@@ -2087,30 +2085,30 @@ bool Fibers::loadCompressed(const QString& filename,
                         cbf.b[3] = pBuffer[pc++];
                         float x2 = cbf.f;
                         remainingSize -= 4;
-                        
+
                         cbf.b[0] = pBuffer[pc++];
                         cbf.b[1] = pBuffer[pc++];
                         cbf.b[2] = pBuffer[pc++];
                         cbf.b[3] = pBuffer[pc++];
                         float y2 = cbf.f;
                         remainingSize -= 4;
-                        
+
                         cbf.b[0] = pBuffer[pc++];
                         cbf.b[1] = pBuffer[pc++];
                         cbf.b[2] = pBuffer[pc++];
                         cbf.b[3] = pBuffer[pc++];
                         float z2 = cbf.f;
                         remainingSize -= 4;
-                        
+
                         x = x2;
                         y = y2;
                         z = z2;
-                        
+
                         Vector point(x, y, z);
                         colorArray.push_back(point);
                         cbf.f = x2;
                     }
-                    
+
                     // Remove last point, which is the NaN
                     colorArray.pop_back();
                     addFiberToPointArray(colorArray);
@@ -2122,10 +2120,10 @@ bool Fibers::loadCompressed(const QString& filename,
                 break;
             }
         }
-        
+
     }
     m_colorArrayLoadedFromFile = readColors;
-    
+
     myfile.close();
     return true;
 }
@@ -2150,7 +2148,7 @@ bool Fibers::saveResults(const QString& str)
             // Add text
             QTextStream out(&m_resultFile);
             out << str;
-            
+
             // Close file
             m_resultFile.close();
         }
@@ -2177,30 +2175,30 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
     {
         name += QString(".zfib");
     }
-    
+
     // Open file
-    std::ofstream myfile(name.toStdString().c_str(), std::ios::out | std::ios::binary);
+    std::ofstream myfile(name.toUtf8().constData(), std::ios::out | std::ios::binary);
     if(!myfile.is_open())
     {
         std::cout << "Can't open input file !" << std::endl;
         return false;
     }
-    
+
     // Write fibertype, total number of points and total number of lines
     int countLines = getCountLines();
     myfile.write((const char*) &(m_fiberType), sizeof(m_fiberType));
     myfile.write((const char*) &(countLines), sizeof(countLines));
-    
+
     // Write encoded signal or points
     myfile.write((const char*) &(encodingType), sizeof(encodingType));
     myfile.write((const char*) &(ttype), sizeof(ttype));
-    
+
     // Check flag to know if we need to stop the process or not
     if(*m_pStop)
     {
         return false;
     }
-    
+
     switch(encodingType)
     {
             // Write encoded points
@@ -2231,8 +2229,8 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
         {
             // Write points directly
             myfile.close();
-            FILE *pFs = fopen(name.toStdString().c_str(), "ab") ;
-            
+            FILE *pFs = fopen(name.toUtf8().constData(), "ab") ;
+
             converterByteFloat cbf;
             for(int f = 0; f < getCountLines(); ++f)
             {
@@ -2248,13 +2246,13 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
                     fputc(cbf.b[1], pFs);
                     fputc(cbf.b[2], pFs);
                     fputc(cbf.b[3], pFs);
-                    
+
                     cbf.f = m_xPointArray[f][j];
                     fputc(cbf.b[0], pFs);
                     fputc(cbf.b[1], pFs);
                     fputc(cbf.b[2], pFs);
                     fputc(cbf.b[3], pFs);
-                    
+
                     cbf.f = m_xPointArray[f][j];
                     fputc(cbf.b[0], pFs);
                     fputc(cbf.b[1], pFs);
@@ -2282,10 +2280,10 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
             break;
         }
     }
-    
+
     // Write encoded colors if needed
     myfile.write((char*)&m_colorArrayLoadedFromFile, sizeof(m_colorArrayLoadedFromFile));
-    
+
     if(m_colorArrayLoadedFromFile)
     {
         // Check flag to know if we need to stop the process or not
@@ -2293,7 +2291,7 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
         {
             return false;
         }
-        
+
         std::string rEncodedColor, gEncodedColor, bEncodedColor;
         switch(encodingType)
         {
@@ -2322,8 +2320,8 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
             {
                 // Write colors directly
                 myfile.close();
-                FILE *pFs = fopen(name.toStdString().c_str(), "ab") ;
-                
+                FILE *pFs = fopen(name.toUtf8().constData(), "ab") ;
+
                 converterByteFloat cbf;
                 for(int f = 0; f < m_rColorArray.size(); ++f)
                 {
@@ -2339,13 +2337,13 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
                         fputc(cbf.b[1], pFs);
                         fputc(cbf.b[2], pFs);
                         fputc(cbf.b[3], pFs);
-                        
+
                         cbf.f = m_gColorArray[f][j];
                         fputc(cbf.b[0], pFs);
                         fputc(cbf.b[1], pFs);
                         fputc(cbf.b[2], pFs);
                         fputc(cbf.b[3], pFs);
-                        
+
                         cbf.f = m_bColorArray[f][j];
                         fputc(cbf.b[0], pFs);
                         fputc(cbf.b[1], pFs);
@@ -2374,10 +2372,10 @@ bool Fibers::saveCompressed(const EncodingType encodingType,
             }
         }
     }
-    
+
     // Close file
 	myfile.close();
-    
+
     return true;
 }
 
@@ -2410,19 +2408,19 @@ bool Fibers::saveDMRI(const QString& filename)
 {
     std::ofstream myfile;
     QString ext = getExtension(filename);
-    
+
 	if(ext != QString("fib"))
     {
         return false;
     }
-    
+
     // Open file
     myfile.open(filename.toStdString().c_str(), std::ios::out);
-    
+
     // Write header
 	myfile << "1 FA\n4 min max mean var\n1\n4 0 0 0 0\n4 0 0 0 0\n4 0 0 0 0\n";
 	myfile << getCountLines() << " " << 0.5 << "\n";
-    
+
     // Write points
     for(int f = 0; f < getCountLines(); ++f)
     {
@@ -2434,14 +2432,14 @@ bool Fibers::saveDMRI(const QString& filename)
             return false;
         }
         myfile << getLineSize(f) << " 1\n1\n";
-        
+
         for( int j = 0; j < getLineSize(f); ++j )
         {
             myfile << m_xPointArray[f][j] << " " << m_xPointArray[f][j] << " " << m_zPointArray[f][j] << " 0\n";
         }
         myfile << m_xPointArray[f][0] << " " << m_yPointArray[f][0] << " " << m_zPointArray[f][0] << " 0\n";
     }
-    
+
     // Close file
     myfile.close();
     return true;
@@ -2455,59 +2453,59 @@ bool Fibers::saveDMRI(const QString& filename)
 bool Fibers::saveTCK(const QString& filename)
 {
     std::ofstream myfile;
-    
+
     QString ext = getExtension(filename);
-    
+
 	if(ext != QString("tck"))
     {
         return false;
     }
-    
+
     // Open file
-    myfile.open(filename.toStdString().c_str(), std::ios::out);
-    
+    myfile.open(filename.toUtf8().constData(), std::ios::out);
+
     // Create header in ostringstream to be able to get its length.
     std::ostringstream header;
     header << "mrtrix tracks\n";
     header << "count: " << m_countLines << "\n";
     header << "datatype: Float32LE\n";
     header << "file: . ";
-    
+
     // To compute the offset of the data in the file, which is used in the
     // "file" field of the header, we need to get the length of the header.
     // +5 is for "\nEND\n"
     size_t header_length = header.tellp();
     header_length += 5;
-    
+
     // We also need to get the length of the header length string,
     // to be able to add it to the offset.
     std::ostringstream temp;
     temp << header_length;
     size_t header_length_str_length = temp.tellp();
     size_t offset = header_length + header_length_str_length;
-    
+
     // We also need to make sure that the final offset takes into account the
     // fact that the addition can raise the length of the offset by one
     // decimal position.
     std::ostringstream temp1;
     temp1 << offset;
     size_t offset_str_length = temp1.tellp();
-    
+
     if(offset_str_length != header_length_str_length)
     {
         offset += 1;
     }
-    
+
     header << offset << "\n";
     header << "END\n";
-    
+
     myfile << header.str();
     myfile.close();
-    
-    
+
+
     // Reopen the file in binary, to write the bytes.
-    FILE *pFs = fopen(filename.toStdString().c_str(), "ab") ;
-    
+    FILE *pFs = fopen(filename.toUtf8().constData(), "ab") ;
+
     converterByteFloat cbf;
     for(int f = 0; f < getCountLines(); ++f)
     {
@@ -2525,13 +2523,13 @@ bool Fibers::saveTCK(const QString& filename)
             fputc(cbf.b[1], pFs);
             fputc(cbf.b[2], pFs);
             fputc(cbf.b[3], pFs);
-            
+
             cbf.f = m_yPointArray[f][j];
             fputc(cbf.b[0], pFs);
             fputc(cbf.b[1], pFs);
             fputc(cbf.b[2], pFs);
             fputc(cbf.b[3], pFs);
-            
+
             cbf.f = m_zPointArray[f][j];
             fputc(cbf.b[0], pFs);
             fputc(cbf.b[1], pFs);
@@ -2573,7 +2571,7 @@ bool Fibers::saveTCK(const QString& filename)
     fputc(cbf.b[1], pFs);
     fputc(cbf.b[2], pFs);
     fputc(cbf.b[3], pFs);
-    
+
     fclose(pFs);
     return true;
 }
@@ -2587,19 +2585,19 @@ bool Fibers::saveTCK(const QString& filename)
 bool Fibers::saveTRK(const QString& filename)
 {
     QString ext = getExtension(filename);
-    
+
 	if(ext != QString("trk"))
     {
         return false;
     }
-    
+
     // Open file
-    FILE *pFs = fopen(filename.toStdString().c_str(), "wb+") ;
+    FILE *pFs = fopen(filename.toUtf8().constData(), "wb+") ;
     if(pFs == NULL)
     {
         return false;
     }
-    
+
     // Write header
     fwrite((const char*)m_pTrkHdr->id_string, sizeof(m_pTrkHdr->id_string), 1, pFs);
     fwrite((const char*)m_pTrkHdr->dim, sizeof(m_pTrkHdr->dim), 1, pFs);
@@ -2624,8 +2622,8 @@ bool Fibers::saveTRK(const QString& filename)
     fwrite((const char*)&m_pTrkHdr->nbCount, sizeof(m_pTrkHdr->nbCount), 1, pFs);
     fwrite((const char*)&m_pTrkHdr->version, sizeof(m_pTrkHdr->version), 1, pFs);
     fwrite((const char*)&m_pTrkHdr->hdrSize, sizeof(m_pTrkHdr->hdrSize), 1, pFs);
-    
-    
+
+
     //converterByteFloat cbf;
     for(int f = 0; f < getCountLines(); ++f)
     {
@@ -2636,18 +2634,18 @@ bool Fibers::saveTRK(const QString& filename)
             std::remove(filename.toStdString().c_str());
             return false;
         }
-        
+
         // Write number of points of this track
         int nbPoints = getLineSize(f);
         fwrite(&nbPoints, sizeof(nbPoints), 1, pFs);
-        
+
         for( int j = 0; j < nbPoints; ++j )
         {
             // Write point
             fwrite(&m_xPointArray[f][j], sizeof(m_xPointArray[f][j]), 1, pFs);
             fwrite(&m_yPointArray[f][j], sizeof(m_yPointArray[f][j]), 1, pFs);
             fwrite(&m_zPointArray[f][j], sizeof(m_zPointArray[f][j]), 1, pFs);
-                    
+
             // Write RGB color
             if(m_pTrkHdr->nbScalars >= 3)
             {
@@ -2655,7 +2653,7 @@ bool Fibers::saveTRK(const QString& filename)
                 fwrite(&m_gColorArray[f][j], sizeof(m_gColorArray[f][j]), 1, pFs);
                 fwrite(&m_bColorArray[f][j], sizeof(m_bColorArray[f][j]), 1, pFs);
             }
-            
+
             // Write properties
             if(m_pTrkHdr->nbScalars > 6)
             {
@@ -2666,7 +2664,7 @@ bool Fibers::saveTRK(const QString& filename)
             }
         }
     }
-        
+
     fclose(pFs);
     return true;
 }
