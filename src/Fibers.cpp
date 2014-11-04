@@ -461,7 +461,7 @@ bool Fibers::linearizeFiber(const int fibIdx,
     int pointIdx = 0;
     int segmentSecondPtIdx = 2;
 
-    Q1 = Vector(m_xPointArray[fibIdx][0], m_xPointArray[fibIdx][0], m_zPointArray[fibIdx][0]);
+    Q1 = Vector(m_xPointArray[fibIdx][0], m_yPointArray[fibIdx][0], m_zPointArray[fibIdx][0]);
     fiberResultX.push_back(m_xPointArray[fibIdx][0]);
     fiberResultY.push_back(m_yPointArray[fibIdx][0]);
     fiberResultZ.push_back(m_zPointArray[fibIdx][0]);
@@ -482,13 +482,13 @@ bool Fibers::linearizeFiber(const int fibIdx,
                 pointIdx = 1;
             }
             Q2 = Vector(m_xPointArray[fibIdx][segmentSecondPtIdx],
-                        m_xPointArray[fibIdx][segmentSecondPtIdx],
+                        m_yPointArray[fibIdx][segmentSecondPtIdx],
                         m_zPointArray[fibIdx][segmentSecondPtIdx]);
 
             float d = 0.0f;
             for (int k = pointIdx; k < segmentSecondPtIdx; k++)
             {
-                P = Vector(m_xPointArray[fibIdx][k], m_xPointArray[fibIdx][k], m_zPointArray[fibIdx][k]);
+                P = Vector(m_xPointArray[fibIdx][k], m_yPointArray[fibIdx][k], m_zPointArray[fibIdx][k]);
                 d = getPointToSegmentDistance(P, Q1, Q2);
                 distance = std::max(distance, d);
             }
@@ -500,7 +500,7 @@ bool Fibers::linearizeFiber(const int fibIdx,
         // Add the last point that can't be removed
         pointIdx = segmentSecondPtIdx;
         Q1 = Vector(m_xPointArray[fibIdx][segmentSecondPtIdx-1],
-                    m_xPointArray[fibIdx][segmentSecondPtIdx-1],
+                    m_yPointArray[fibIdx][segmentSecondPtIdx-1],
                     m_zPointArray[fibIdx][segmentSecondPtIdx-1]);
         fiberResultX.push_back(m_xPointArray[fibIdx][segmentSecondPtIdx-1]);
         fiberResultY.push_back(m_yPointArray[fibIdx][segmentSecondPtIdx-1]);
@@ -510,7 +510,7 @@ bool Fibers::linearizeFiber(const int fibIdx,
         if(segmentSecondPtIdx == getLineSize(fibIdx) - 1)
         {
             Q1 = Vector(m_xPointArray[fibIdx][segmentSecondPtIdx],
-                        m_xPointArray[fibIdx][segmentSecondPtIdx],
+                        m_yPointArray[fibIdx][segmentSecondPtIdx],
                         m_zPointArray[fibIdx][segmentSecondPtIdx]);
             fiberResultX.push_back(m_xPointArray[fibIdx][segmentSecondPtIdx]);
             fiberResultY.push_back(m_yPointArray[fibIdx][segmentSecondPtIdx]);
