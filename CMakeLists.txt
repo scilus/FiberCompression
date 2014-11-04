@@ -35,7 +35,7 @@ MARK_AS_ADVANCED(BUILD_TO_SAVE_STATS)
 #==================================================================
 # Look for QT4 (required)
 #==================================================================
-find_package(Qt4 4.6.0 REQUIRED)
+find_package(Qt4 4.8 REQUIRED)
 set(QT_USE_QTGUI TRUE)
 #set(QT_USE_QTOPENGL TRUE)
 set(QT_USE_QTXML TRUE)
