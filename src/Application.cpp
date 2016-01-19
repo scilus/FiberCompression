@@ -310,7 +310,7 @@ bool Application::getAndValidateCommandLineArgs(Param& parameters)
     {
         if(m_errorArg->getValue() <= 0.0f)
         {
-            showMessage("Error : Maximum error must greater than zero.");
+            showMessage("Error : Maximum error must be greater than zero.");
             return false;
         }
         parameters.errorMax = m_errorArg->getValue();

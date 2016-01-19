@@ -371,10 +371,12 @@ float getPointToSegmentDistance(const Vector c,
     float ab_magn = ab.getMagnitude();
     if(ab_magn == 0.0f) // Distance point to point
     {
+        // TODO HERE CHECK THIS AND THE CONDITION
         Vector d = ab - ac;
         return d.getMagnitude();
     }
     
+    // TODO CHECK THIS FORMULA
     return (ab.cross(ac)).getMagnitude() / ab_magn;
 }
 
